@@ -1,0 +1,21 @@
+{
+  "mileage": 43520.5,
+  "mpg_avg": 24.5,
+  "price_drop": 565.0,
+  "seller_rating": 4.5,
+  "driver_rating": 4.7,
+  "driver_reviews_num": 61.0,
+  "accidents_or_damage": 0.0,
+  "one_owner": 1.0,
+  "personal_use_only": 1.0,
+  "age": 4.0,
+  "mileage_per_year": 11104.5,
+  "engine_liters": 2.5,
+  "engine_cylinders": 4.0,
+  "engine_turbo": 0.0,
+  "engine_hybrid": 0.0,
+  "transmission_gears": 8.0,
+  "transmission_gears_missing": 0.0,
+  "is_luxury_brand": 0.0,
+  "luxury_age_interaction": 0.0
+}
