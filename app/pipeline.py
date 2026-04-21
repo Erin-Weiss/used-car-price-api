@@ -109,7 +109,7 @@ def parse_engine(engine: str) -> pd.Series:
 # Transmission parsing
 # ===============================
 
-def normalize_transmission(t: str) -> str:
+def normalize_transmission(t: str | None) -> str:
     if pd.isna(t):
         return "unknown"
     t = str(t)
@@ -118,7 +118,7 @@ def normalize_transmission(t: str) -> str:
     return t
 
 
-def transmission_type(t: str) -> str:
+def transmission_type(t: str | None) -> str:
     t = normalize_transmission(t)
     if t == "unknown" or "not specified" in t:
         return "unknown"
@@ -129,7 +129,7 @@ def transmission_type(t: str) -> str:
     return "automatic"
 
 
-def transmission_gears(t: str) -> float:
+def transmission_gears(t: str | None) -> float:
     t = normalize_transmission(t)
     match = re.search(r"(\d+)\s?speed", t)
     return int(match.group(1)) if match else np.nan
@@ -258,14 +258,14 @@ def build_features_df(df_cleaned: pd.DataFrame) -> pd.DataFrame:
     }
     for col, dtype in numeric_casts.items():
         if col in X.columns:
-            X[col] = X[col].astype(dtype)
+            X[col] = X[col].astype(dtype) # type: ignore
 
     for col in ["engine_layout", "transmission_clean", "exterior_color_base", "interior_color_base"]:
         if col in X.columns:
             X[col] = X[col].astype("object")
 
     features_df = X.copy()
-    features_df["target_log1p_price"] = y.values
+    features_df["target_log1p_price"] = y.values # type: ignore
     return features_df
 
 
@@ -373,7 +373,7 @@ def prepare_for_prediction(
     }
     for col, dtype in numeric_casts.items():
         if col in df.columns:
-            df[col] = df[col].astype(dtype)
+            df[col] = df[col].astype(dtype) # type: ignore
 
     for col in ["engine_layout", "transmission_clean", "exterior_color_base", "interior_color_base"]:
         if col in df.columns:
