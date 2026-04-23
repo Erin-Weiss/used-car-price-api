@@ -1,0 +1,40 @@
+# OS and editor files
+**/.DS_Store
+**/__pycache__
+**/.venv
+**/.env
+**/.git
+**/.gitignore
+**/.vscode
+**/.idea
+
+# Docker files (not needed inside the container)
+**/.dockerignore
+**/Dockerfile*
+**/docker-compose*
+**/compose.y*ml
+**/requirements-dev*
+
+# Test files
+**/tests
+**/.pytest_cache
+
+# Kubernetes manifests
+**/k8s
+
+# Notebook and training data (not needed for API)
+**/data
+**/notebooks
+**/*.qmd
+**/*.ipynb
+
+# Documentation
+LICENSE
+README.md
+README.Docker.md
+*.md
+
+# Build artifacts
+**/bin
+**/obj
+**/*.pyc
