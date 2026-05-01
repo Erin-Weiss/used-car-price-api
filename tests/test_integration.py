@@ -132,31 +132,40 @@ OLD_HIGH_MILEAGE = {
 }
 
 
+def _predict(client, payload: dict) -> dict:
+    """Post a prediction request and assert the endpoint returned 200."""
+    response = client.post("/api/v1/predict", json=payload)
+    assert response.status_code == 200, (
+        f"Expected 200 but got {response.status_code}: {response.text}"
+    )
+    return response.json()
+
+
 class TestIntegrationPredictions:
     """Verify that predictions are in reasonable price ranges."""
 
     def test_toyota_camry_price_range(self, real_client):
-        data = real_client.post("/api/v1/predict", json=TOYOTA_CAMRY).json()
+        data = _predict(real_client, TOYOTA_CAMRY)
         price = data["predicted_price"]
         assert 10_000 < price < 50_000, f"Toyota Camry price {price} outside expected range"
 
     def test_bmw_x5_more_expensive_than_camry(self, real_client):
-        camry_price = real_client.post("/api/v1/predict", json=TOYOTA_CAMRY).json()["predicted_price"]
-        bmw_price = real_client.post("/api/v1/predict", json=BMW_X5).json()["predicted_price"]
+        camry_price = _predict(real_client, TOYOTA_CAMRY)["predicted_price"]
+        bmw_price = _predict(real_client, BMW_X5)["predicted_price"]
         assert bmw_price > camry_price, "BMW X5 should be more expensive than Toyota Camry"
 
     def test_old_high_mileage_cheapest(self, real_client):
-        camry_price = real_client.post("/api/v1/predict", json=TOYOTA_CAMRY).json()["predicted_price"]
-        old_price = real_client.post("/api/v1/predict", json=OLD_HIGH_MILEAGE).json()["predicted_price"]
+        camry_price = _predict(real_client, TOYOTA_CAMRY)["predicted_price"]
+        old_price = _predict(real_client, OLD_HIGH_MILEAGE)["predicted_price"]
         assert old_price < camry_price, "2005 Civic with 180k miles should be cheaper than 2020 Camry"
 
     def test_prediction_is_positive(self, real_client):
         for payload in [TOYOTA_CAMRY, BMW_X5, OLD_HIGH_MILEAGE]:
-            data = real_client.post("/api/v1/predict", json=payload).json()
+            data = _predict(real_client, payload)
             assert data["predicted_price"] > 0
 
     def test_no_warnings_for_known_vehicles(self, real_client):
-        data = real_client.post("/api/v1/predict", json=TOYOTA_CAMRY).json()
+        data = _predict(real_client, TOYOTA_CAMRY)
         assert data["warnings"] == []
 
 
@@ -166,16 +175,16 @@ class TestIntegrationFuzzyCorrection:
     def test_manufacturer_typo_corrected(self, real_client):
         payload = dict(TOYOTA_CAMRY)
         payload["manufacturer"] = "Toyata"
-        data = real_client.post("/api/v1/predict", json=payload).json()
+        data = _predict(real_client, payload)
         assert any("corrected" in w for w in data["warnings"])
         assert data["predicted_price"] > 0
 
     def test_corrected_price_identical_to_correct_price(self, real_client):
-        correct_price = real_client.post("/api/v1/predict", json=TOYOTA_CAMRY).json()["predicted_price"]
+        correct_price = _predict(real_client, TOYOTA_CAMRY)["predicted_price"]
 
         payload = dict(TOYOTA_CAMRY)
         payload["manufacturer"] = "Toyata"
-        corrected_price = real_client.post("/api/v1/predict", json=payload).json()["predicted_price"]
+        corrected_price = _predict(real_client, payload)["predicted_price"]
 
         assert correct_price == corrected_price
 
@@ -199,15 +208,15 @@ class TestIntegrationOptionalFields:
             "one_owner": 1,
             "personal_use_only": 1,
         }
-        data = real_client.post("/api/v1/predict", json=minimal).json()
+        data = _predict(real_client, minimal)
         assert data["predicted_price"] > 0
 
     def test_minimal_and_full_prices_are_close(self, real_client):
-        full_price = real_client.post("/api/v1/predict", json=TOYOTA_CAMRY).json()["predicted_price"]
+        full_price = _predict(real_client, TOYOTA_CAMRY)["predicted_price"]
 
         minimal = {k: v for k, v in TOYOTA_CAMRY.items()
                    if k not in ("mpg", "price_drop", "seller_rating", "driver_rating", "driver_reviews_num")}
-        minimal_price = real_client.post("/api/v1/predict", json=minimal).json()["predicted_price"]
+        minimal_price = _predict(real_client, minimal)["predicted_price"]
 
         ratio = minimal_price / full_price
         assert 0.7 < ratio < 1.3, f"Minimal/full price ratio {ratio} is too far off"
