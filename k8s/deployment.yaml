@@ -1,0 +1,86 @@
+## Manages the API Pods: replicas, health probes, resources, and rolling updates.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: used-car-price-api
+  namespace: used-car-price-api
+  labels:
+    app.kubernetes.io/name: used-car-price-api
+    app.kubernetes.io/component: api
+    app.kubernetes.io/version: "0.1.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: used-car-price-api
+      app.kubernetes.io/component: api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: used-car-price-api
+        app.kubernetes.io/component: api
+        app.kubernetes.io/version: "0.1.0"
+    spec:
+      containers:
+        - name: api
+          image: used-car-price-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: api-config
+          ## Startup — waits for the CatBoost model to finish loading.
+          ## Allows up to ~125 s (5s initial + 24 x 5s) for model loading.
+          startupProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          ## Liveness — "is the process alive?"
+          ## If this fails 3 times, K8s kills and restarts the Pod.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          ## Resource requests (guaranteed) and limits (hard cap).
+          ## Sized for CatBoost model inference on a single request.
+          ## For production, should increase.
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          ## Security hardening — run as non-root, drop all Linux
+          ## capabilities, prevent privilege escalation.
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 10001
+            capabilities:
+              drop:
+                - ALL
+      terminationGracePeriodSeconds: 30

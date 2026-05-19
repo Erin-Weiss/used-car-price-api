@@ -1,5 +1,6 @@
 # OS and editor files
 **/.DS_Store
+**/.rnd
 **/__pycache__
 **/.venv
 **/.env

@@ -1,0 +1,8 @@
+## Logical isolation for the used-car-price-api workload.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: used-car-price-api
+  labels:
+    app.kubernetes.io/name: used-car-price-api
+    app.kubernetes.io/part-of: ml-portfolio

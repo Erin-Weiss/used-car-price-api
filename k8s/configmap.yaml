@@ -1,0 +1,18 @@
+## Non-secret configuration injected into Pods as environment variables.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  namespace: used-car-price-api
+  labels:
+    app.kubernetes.io/name: used-car-price-api
+    app.kubernetes.io/component: config
+data:
+  ENVIRONMENT: "prod"
+  DEBUG: "false"
+  APP_NAME: "Used Car Price API"
+  API_PREFIX: "/api/v1"
+  # HOST and PORT document the expected runtime bind address.
+  # The current Dockerfile CMD also hard-codes these values.
+  HOST: "0.0.0.0"
+  PORT: "8000"
