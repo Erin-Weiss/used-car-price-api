@@ -138,11 +138,13 @@ class PredictionRequest(APIModel):
     )
 
     # --- Listing metadata (optional — median-imputed if omitted) ---
-    mpg: str | None = Field(
+    mpg: str | float | int | None = Field(
         default=None,
-        description="MPG as a range string ('28-32') or single value ('30'). "
-        "If omitted, the training-set median mpg_avg is used.",
-        examples=["28-32"],
+        description=(
+            "MPG as a range string ('28-32'), single value string ('30'), "
+            "or numeric value (30). If omitted, the training-set median mpg_avg is used."
+        ),
+        examples=["28-32", "30", 30],
     )
     price_drop: float | None = Field(
         default=None,

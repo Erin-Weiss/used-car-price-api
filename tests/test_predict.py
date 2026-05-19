@@ -81,6 +81,19 @@ class TestPredictRoute:
         assert response.status_code == 200
         assert response.json()["predicted_price"] > 0
 
+    def test_numeric_mpg_is_accepted(self, client, sample_payload):
+        sample_payload["mpg"] = 30
+
+        response = client.post(
+            f"{main_module.settings.api_prefix}/predict",
+            json=sample_payload,
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["predicted_price"] > 0
+        assert body["input_echo"]["mpg_avg"] == 30.0
+
 
 # ===============================
 # Validation errors (422)
