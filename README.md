@@ -16,7 +16,7 @@
 
 ## Overview
 
-This is **Part 2** of a two-part project. [Part 1](https://github.com/Erin-Weiss/used-car-price-regression) explored the data science — EDA, feature engineering, and model selection across Ridge, CatBoost, and FT-Transformer architectures. The final CatBoost model predicts within ~$1,300 of the true listing price at the median across 29 manufacturers and 5,600+ model variants.
+This is **Part 2** of a two-part project. [Part 1](https://github.com/Erin-Weiss/used-car-price-prediction) explored the data science — EDA, feature engineering, and model selection across Ridge, CatBoost, and FT-Transformer architectures. The final CatBoost model predicts within ~$1,300 of the true listing price at the median across 29 manufacturers and 5,600+ model variants.
 
 **This repo takes that model from a notebook artifact to a production-ready API**, covering everything a real deployment needs: request validation, fuzzy matching of user inputs, median imputation of optional fields, containerization, orchestration, health monitoring, and automated CI/CD.
 
@@ -254,15 +254,15 @@ used-car-price-api/
 ├── dev-requirements.in        # Dev/test direct dependencies
 ├── dev-requirements.txt       # Dev/test pinned dependencies
 ├── README.md
-├── README_Docker.md           # Docker deployment guide
-└── README_Kubernetes.md       # Kubernetes deployment guide
+├── README.Docker.md           # Docker deployment guide
+└── README.Kubernetes.md       # Kubernetes deployment guide
 ```
 
 ---
 
 ## Testing
 
-The test suite uses mocked model artifacts so unit tests run in seconds without needing the real CatBoost model file. Integration tests use the real model to verify end-to-end predictions are in reasonable ranges — they auto-skip gracefully if the model file isn't on disk.
+The test suite uses mocked model artifacts so unit tests run in seconds without needing the real CatBoost model file. Integration tests use the real model to verify end-to-end predictions are in reasonable ranges and are run locally where the model file is available.
 
 ```bash
 # Unit tests only (fast, no model file needed)
@@ -271,7 +271,7 @@ python -m pytest tests/ --ignore=tests/test_integration.py -v
 # Integration tests (requires models/catboost_final.cbm)
 python -m pytest tests/test_integration.py -v
 
-# All tests (integration auto-skips if model not found)
+# All tests (integration tests auto-skip if model not found)
 python -m pytest tests/ -v
 ```
 
@@ -281,15 +281,15 @@ Tests cover input validation, fuzzy matching edge cases, median imputation, feat
 
 ## CI/CD
 
-Every push and pull request to `main` triggers a GitHub Actions pipeline that runs three jobs in parallel:
+Every push and pull request to `main` triggers a GitHub Actions pipeline with three quality gates:
 
 | Job | What It Does |
 |---|---|
-| **Tests** | Installs dependencies and runs the full `pytest` suite |
-| **Docker Build** | Builds the Docker image to catch packaging issues early |
+| **Tests** | Runs the fast unit test suite with mocked model artifacts |
+| **Docker Build** | Checks out the real Git LFS model file and verifies the Docker image builds |
 | **K8s Manifests** | Validates all Kubernetes YAML with `kubeconform` |
 
-Integration tests auto-skip in CI since the model file is stored in Git LFS and may not be available in the runner environment. Unit tests provide full coverage of the prediction logic, fuzzy matching, and API behavior using mocked fixtures.
+Integration tests are run locally because they require the real CatBoost model and full serving artifacts. The Docker build job still verifies that the real model can be packaged into the production image.
 
 ---
 
@@ -297,8 +297,8 @@ Integration tests auto-skip in CI since the model file is stored in Git LFS and 
 
 See the dedicated deployment guides for detailed instructions:
 
-- **[Docker Guide](README_Docker.md)** — Build, run, configure, and deploy the container image
-- **[Kubernetes Guide](README_Kubernetes.md)** — Manifest reference, health probes, autoscaling, and production considerations
+- **[Docker Guide](README.Docker.md)** — Build, run, configure, and deploy the container image
+- **[Kubernetes Guide](README.Kubernetes.md)** — Manifest reference, health probes, autoscaling, and production considerations
 
 ---
 
@@ -306,7 +306,7 @@ See the dedicated deployment guides for detailed instructions:
 
 The modeling work behind this API is documented in a separate repository:
 
-**[Used Car Price Regression →](https://github.com/Erin-Weiss/used-car-price-regression)**
+**[Used Car Price Regression →](https://github.com/Erin-Weiss/used-car-price-prediction)**
 
 That project covers exploratory data analysis, feature engineering across 20 vehicle attributes, and model selection across three architectures (Ridge, CatBoost, FT-Transformer). The CatBoost model was selected for production based on its combination of accuracy (median error ~$1,300), inference speed, and native categorical feature handling.
 
@@ -333,10 +333,8 @@ That project covers exploratory data analysis, feature engineering across 20 veh
 This project is for portfolio and educational purposes.
 
 ---
+## Author
 
-## Links
+**Erin Weiss** · [Portfolio](https://erin-weiss.github.io/index.html) · [LinkedIn](https://www.linkedin.com/in/erinweiss3/) · [GitHub](https://github.com/Erin-Weiss)
 
-- **Portfolio:** [erin-weiss.github.io](https://erin-weiss.github.io/index.html)
-- **LinkedIn:** [linkedin.com/in/erinweiss3](https://www.linkedin.com/in/erinweiss3/)
-- **GitHub:** [github.com/Erin-Weiss](https://github.com/Erin-Weiss)
-- **Part 1 (Model Development):** [Used Car Price Regression](https://github.com/Erin-Weiss/used-car-price-regression)
+- **Part 1 (Model Development):** [Used Car Price Regression](https://github.com/Erin-Weiss/used-car-price-prediction)
