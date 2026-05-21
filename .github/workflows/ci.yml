@@ -1,0 +1,152 @@
+# ============================================================
+# CI Pipeline — Used Car Price API
+# ============================================================
+# Runs on every push and pull request to main.
+# Jobs: test, docker-build, validate-k8s, integration-test (main only)
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # --------------------------------------------------------
+  # Job 1: Run the pytest unit test suite
+  # --------------------------------------------------------
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements.txt', 'dev-requirements.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r dev-requirements.txt
+
+      - name: Run unit tests
+        run: python -m pytest tests/ --ignore=tests/test_integration.py -v --tb=short
+
+  # --------------------------------------------------------
+  # Job 2: Build the Docker image
+  # --------------------------------------------------------
+  # Checks out LFS files so the real model is available in
+  # the build context. Verifies the Dockerfile builds
+  # successfully without pushing anywhere.
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code with Git LFS
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: used-car-price-api:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # --------------------------------------------------------
+  # Job 3: Validate Kubernetes manifests
+  # --------------------------------------------------------
+  # Catches YAML mistakes, wrong API versions, and missing
+  # required fields before they reach a cluster.
+  validate-k8s:
+    name: K8s Manifests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz \
+            | tar xz -C /usr/local/bin
+
+      - name: Validate manifests
+        run: |
+          kubeconform \
+            -strict \
+            -summary \
+            -output text \
+            k8s/*.yaml
+
+  # --------------------------------------------------------
+  # Job 4: Run integration tests with the real CatBoost model
+  # --------------------------------------------------------
+  # Only runs on pushes to main (not PRs). Downloads the real
+  # model file via Git LFS and verifies end-to-end predictions
+  # against the actual trained model.
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code with Git LFS
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Verify model file is real (not an LFS pointer)
+        run: |
+          ls -lh models/catboost_final.cbm
+          test $(wc -c < models/catboost_final.cbm) -gt 1000000
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('requirements.txt', 'dev-requirements.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r dev-requirements.txt
+
+      - name: Run integration tests
+        run: python -m pytest tests/test_integration.py -v --tb=short
