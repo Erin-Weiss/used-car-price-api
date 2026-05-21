@@ -262,7 +262,7 @@ used-car-price-api/
 
 ## Testing
 
-The test suite uses mocked model artifacts so unit tests run in seconds without needing the real CatBoost model file. Integration tests use the real model to verify end-to-end predictions are in reasonable ranges and are run locally where the model file is available.
+The test suite uses mocked model artifacts so unit tests run in seconds without needing the real CatBoost model file. Integration tests use the real model to verify end-to-end predictions are in reasonable ranges — they run automatically in CI on pushes to main, and can also be run locally.
 
 ```bash
 # Unit tests only (fast, no model file needed)
@@ -281,7 +281,9 @@ Tests cover input validation, fuzzy matching edge cases, median imputation, feat
 
 ## CI/CD
 
-Every push and pull request to `main` triggers a GitHub Actions pipeline with three quality gates:
+Every push and pull request to `main` triggers a GitHub Actions pipeline. The pipeline uses a two-tier strategy to balance speed with thoroughness:
+
+**On every push and pull request:**
 
 | Job | What It Does |
 |---|---|
@@ -289,7 +291,13 @@ Every push and pull request to `main` triggers a GitHub Actions pipeline with th
 | **Docker Build** | Checks out the real Git LFS model file and verifies the Docker image builds |
 | **K8s Manifests** | Validates all Kubernetes YAML with `kubeconform` |
 
-Integration tests are run locally because they require the real CatBoost model and full serving artifacts. The Docker build job still verifies that the real model can be packaged into the production image.
+**On pushes to main only (after unit tests pass):**
+
+| Job | What It Does |
+|---|---|
+| **Integration Tests** | Downloads the real CatBoost model via Git LFS, verifies it's not a pointer file, and runs end-to-end prediction tests against the actual trained model |
+
+Pull requests get fast unit test feedback in under a minute. Merges to main run the full validation suite, including end-to-end predictions against the real CatBoost model.
 
 ---
 
@@ -306,7 +314,7 @@ See the dedicated deployment guides for detailed instructions:
 
 The modeling work behind this API is documented in a separate repository:
 
-**[Used Car Price Regression →](https://github.com/Erin-Weiss/used-car-price-prediction)**
+**[Used Car Price Prediction →](https://github.com/Erin-Weiss/used-car-price-prediction)**
 
 That project covers exploratory data analysis, feature engineering across 20 vehicle attributes, and model selection across three architectures (Ridge, CatBoost, FT-Transformer). The CatBoost model was selected for production based on its combination of accuracy (median error ~$1,300), inference speed, and native categorical feature handling.
 
@@ -337,4 +345,4 @@ This project is for portfolio and educational purposes.
 
 **Erin Weiss** · [Portfolio](https://erin-weiss.github.io/index.html) · [LinkedIn](https://www.linkedin.com/in/erinweiss3/) · [GitHub](https://github.com/Erin-Weiss)
 
-- **Part 1 (Model Development):** [Used Car Price Regression](https://github.com/Erin-Weiss/used-car-price-prediction)
+- **Part 1 (Model Development):** [Used Car Price Prediction](https://github.com/Erin-Weiss/used-car-price-prediction)
