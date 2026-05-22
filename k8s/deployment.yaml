@@ -28,8 +28,8 @@ spec:
     spec:
       containers:
         - name: api
-          image: used-car-price-api:latest
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/erin-weiss/used-car-price-api:latest
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8000

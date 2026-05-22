@@ -63,22 +63,27 @@ docker compose logs -f      # follow logs in real time
 
 ## Deploying to the Cloud
 
-Build the image:
+The CI pipeline automatically builds and publishes the image to GitHub Container Registry on every push to `main`. You can pull it directly:
 
 ```bash
+docker pull ghcr.io/erin-weiss/used-car-price-api:latest
+```
+
+To build and push manually (e.g., for a different registry or architecture):
+
+```bash
+# Build the image
 docker build -t used-car-price-api .
-```
 
-If your cloud uses a different CPU architecture than your development machine (e.g., Mac M1 deploying to amd64):
-
-```bash
+# If your cloud uses a different CPU architecture than your development machine
+# (e.g., Mac M1/M2 deploying to amd64):
 docker build --platform=linux/amd64 -t used-car-price-api .
-```
 
-Push to your registry:
+# Tag for your registry
+docker tag used-car-price-api ghcr.io/erin-weiss/used-car-price-api:latest
 
-```bash
-docker push myregistry.com/used-car-price-api
+# Push (requires authentication — CI handles this automatically)
+docker push ghcr.io/erin-weiss/used-car-price-api:latest
 ```
 
 ## Health Checks

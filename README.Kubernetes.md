@@ -122,22 +122,25 @@ open -a Docker
 # Start a local cluster with enough resources for the ML model
 minikube start --driver=docker --memory=4096 --cpus=2
 
-# Build the Docker image inside Minikube's Docker environment
-eval $(minikube docker-env)
-docker build -t used-car-price-api:latest .
-
-# Apply all manifests
+# Apply all manifests (image is pulled from GHCR automatically)
 kubectl apply -f k8s/
 
-# Wait for Pods to become ready (model loading takes ~30-60s)
+# Wait for Pods to become ready (image pull + model loading takes ~60-90s)
 kubectl wait --for=condition=ready pod \
   -l app.kubernetes.io/name=used-car-price-api \
   -n used-car-price-api \
-  --timeout=120s
+  --timeout=180s
 
 # Get the URL
 minikube service used-car-price-api -n used-car-price-api --url
 ```
+
+> **Local builds (optional):** If you want to test local code changes without pushing to GitHub first, you can build inside Minikube's Docker daemon:
+> ```bash
+> eval $(minikube docker-env)
+> docker build -t ghcr.io/erin-weiss/used-car-price-api:latest .
+> kubectl rollout restart deployment/used-car-price-api -n used-car-price-api
+> ```
 
 ### Verify
 
@@ -193,7 +196,7 @@ minikube delete
 
 | Symptom | Likely Cause | Fix |
 |---|---|---|
-| `ImagePullBackOff` | Image not built inside Minikube's Docker | Run `eval $(minikube docker-env)` then rebuild |
+| `ImagePullBackOff` | Image not accessible from GHCR | Verify the package is public: GitHub profile → Packages → used-car-price-api → Package settings → Visibility: Public |
 | `CrashLoopBackOff` | App crashing on startup | Check logs: `kubectl logs <pod-name> -n used-car-price-api --previous` |
 | Pods `0/1 Running` | Model still loading | Wait for startup probe to pass (~30-60s), or check `/ready` response |
 | HPA shows `<unknown>/70%` | Metrics server not enabled | Run `minikube addons enable metrics-server` |
@@ -205,7 +208,7 @@ minikube delete
 The current manifests target local development. For a production deployment, consider:
 
 - **Service type**: Switch from `NodePort` to `ClusterIP` behind an Ingress controller with TLS termination.
-- **Image registry**: Replace `used-car-price-api:latest` with a versioned tag from a container registry (e.g. `ghcr.io/<user>/used-car-price-api:0.1.0`).
+- **Image tags**: The manifests use `ghcr.io/erin-weiss/used-car-price-api:latest`. For production, pin to a specific commit SHA tag (e.g. `ghcr.io/erin-weiss/used-car-price-api:a1b2c3d`) for reproducible deployments.
 - **Resource limits**: Profile actual memory and CPU usage under load and adjust requests/limits accordingly.
 - **Secrets**: If credentials are added in the future, use Kubernetes Secrets (or an external secrets manager) instead of the ConfigMap.
 - **Monitoring**: Add Prometheus annotations and a `/metrics` endpoint for observability.

@@ -11,6 +11,7 @@
 [![CatBoost](https://img.shields.io/badge/CatBoost-FFCC00?logo=catboost&logoColor=black)](https://catboost.ai)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io)
+[![GHCR](https://img.shields.io/badge/GHCR-published-blue?logo=github)](https://github.com/Erin-Weiss/used-car-price-api/pkgs/container/used-car-price-api)
 
 ---
 
@@ -161,6 +162,17 @@ uvicorn app.main:app --reload
 ```bash
 docker compose up --build
 ```
+
+### Pull from Registry
+
+The image is published to GitHub Container Registry on every merge to main:
+
+```bash
+docker pull ghcr.io/erin-weiss/used-car-price-api:latest
+docker run -p 8000:8000 ghcr.io/erin-weiss/used-car-price-api:latest
+```
+
+The API will be available at `http://localhost:8000/api/v1/docs`.
 
 ### Example Request
 
