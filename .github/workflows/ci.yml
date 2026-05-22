@@ -172,6 +172,9 @@ jobs:
         with:
           lfs: true
 
+      - name: Set up QEMU (for multi-platform builds)
+        uses: docker/setup-qemu-action@v3
+
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
@@ -187,6 +190,7 @@ jobs:
         with:
           context: .
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: |
             ghcr.io/erin-weiss/used-car-price-api:latest
             ghcr.io/erin-weiss/used-car-price-api:${{ github.sha }}
