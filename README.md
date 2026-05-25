@@ -11,6 +11,7 @@
 [![CatBoost](https://img.shields.io/badge/CatBoost-FFCC00?logo=catboost&logoColor=black)](https://catboost.ai)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io)
+[![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white)](https://prometheus.io)
 [![GHCR](https://img.shields.io/badge/GHCR-published-blue?logo=github)](https://github.com/Erin-Weiss/used-car-price-api/pkgs/container/used-car-price-api)
 
 ---
@@ -21,7 +22,52 @@ This is **Part 2** of a two-part project. [Part 1](https://github.com/Erin-Weiss
 
 **This repo takes that model from a notebook artifact to a production-ready API**, covering everything a real deployment needs: request validation, fuzzy matching of user inputs, median imputation of optional fields, containerization, orchestration, health monitoring, and automated CI/CD.
 
-<!-- TODO: Add architecture diagram here -->
+```mermaid
+flowchart LR
+    Client([Client])
+
+    subgraph api [FastAPI Application]
+        direction TB
+        predict["POST /api/v1/predict"]
+        health["GET /health"]
+        ready["GET /ready"]
+        metrics["GET /metrics"]
+
+        subgraph pipeline [Prediction Pipeline]
+            direction LR
+            validate[Pydantic\nValidation]
+            fuzzy[Fuzzy\nMatching]
+            impute[Median\nImputation]
+            engineer[Feature\nEngineering]
+            model[CatBoost\nInference]
+        end
+
+        predict --> validate --> fuzzy --> impute --> engineer --> model
+    end
+
+    subgraph k8s [Kubernetes Cluster]
+        direction TB
+        deploy[Deployment\n2–6 pods]
+        svc[Service\nLoad Balancer]
+        hpa[HPA\nAutoscaling]
+        cfg[ConfigMap]
+        prom[Prometheus\nAnnotations]
+    end
+
+    subgraph cicd [GitHub Actions CI/CD]
+        direction TB
+        tests[Unit Tests]
+        docker[Docker Build]
+        k8sval[K8s Validation]
+        integ[Integration Tests]
+        publish[Publish Image to GHCR]
+    end
+
+    Client --> svc --> deploy --> api
+    hpa --> deploy
+    cfg --> deploy
+    prom -.->|scrape /metrics| metrics
+```
 
 ---
 
@@ -50,8 +96,9 @@ Client Request
 │    ├── CatBoost inference (log1p → expm1 inverse transform) │
 │    └── Structured JSON response with warnings + input echo  │
 │                                                             │
-│  GET /health ─── Kubernetes liveness probe                  │
-│  GET /ready ──── Kubernetes readiness + startup probe       │
+│  GET  /health ──── Kubernetes liveness probe                │
+│  GET  /ready ───── Kubernetes readiness + startup probe     │
+│  GET  /metrics ─── Prometheus-compatible observability      │
 └─────────────────────────────────────────────────────────────┘
     │
     ▼
@@ -60,7 +107,8 @@ Client Request
 │    ├── Deployment (2–6 pods, rolling updates)               │
 │    ├── Service (load balancing)                             │
 │    ├── HPA (CPU-based autoscaling)                          │
-│    └── ConfigMap (environment configuration)                │
+│    ├── ConfigMap (environment configuration)                │
+│    └── Prometheus annotations (auto-discovery scraping)     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -80,6 +128,24 @@ Client Request
 
 **Thread-safe runtime state.** The model and JSON artifacts are loaded once at startup and shared immutably across all incoming requests. A double-checked lock in `model.py` ensures that even if multiple requests arrive during startup, the model is loaded exactly once — no race conditions, no duplicated work.
 
+---
+
+## Observability
+
+The API exposes Prometheus-compatible metrics at `GET /metrics` for production monitoring. Three custom metrics track what matters for ML model serving:
+
+| Metric | Type | What It Tracks |
+|---|---|---|
+| `prediction_requests_total` | Counter | Total predictions served, labeled by status (success/error) |
+| `prediction_latency_seconds` | Histogram | Prediction duration distribution with percentile buckets |
+| `prediction_errors_total` | Counter | Failed predictions, labeled by error type (validation/server/unexpected) |
+
+Metrics are collected via ASGI middleware that wraps the prediction endpoint — the model inference code itself is untouched. Kubernetes deployment manifests include Prometheus scraping annotations (`prometheus.io/scrape`, `prometheus.io/port`, `prometheus.io/path`) for automatic service discovery in production clusters.
+
+```bash
+# View raw metrics
+curl http://localhost:8000/metrics
+```
 ---
 
 ## API Reference
@@ -222,6 +288,7 @@ used-car-price-api/
 ├── app/
 │   ├── __init__.py            # Package marker
 │   ├── main.py                # FastAPI app, routes, lifespan
+│   ├── metrics.py             # Prometheus metrics + instrumentation middleware
 │   ├── predict.py             # Prediction orchestration + fuzzy matching
 │   ├── pipeline.py            # Feature engineering (shared with training)
 │   ├── model.py               # Model loading, runtime state, probes
@@ -235,6 +302,7 @@ used-car-price-api/
 │   ├── test_pipeline.py       # Feature engineering tests
 │   ├── test_model.py          # Runtime state tests
 │   ├── test_health.py         # Health/readiness endpoint tests
+│   ├── test_metrics.py        # Prometheus metrics tests
 │   └── test_integration.py    # Full lifecycle tests (requires real model)
 │
 ├── k8s/
@@ -345,6 +413,7 @@ That project covers exploratory data analysis, feature engineering across 20 veh
 | CI/CD | `GitHub Actions` |
 | Testing | `pytest` with mocked runtime state |
 | Config | `pydantic-settings` (env vars + `.env`) |
+| Monitoring | `prometheus_client` (Prometheus-compatible metrics) |
 
 ---
 

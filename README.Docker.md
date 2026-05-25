@@ -20,6 +20,7 @@ The API will be available at:
 - Health check: http://localhost:8000/health
 - Readiness check: http://localhost:8000/ready
 - Predict endpoint: http://localhost:8000/api/v1/predict
+- Metrics: http://localhost:8000/metrics
 
 To run in the background (detached mode):
 
