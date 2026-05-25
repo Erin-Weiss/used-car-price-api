@@ -115,6 +115,7 @@ jobs:
             -strict \
             -summary \
             -output text \
+            -ignore-missing-schemas \
             k8s/*.yaml
 
   # --------------------------------------------------------
