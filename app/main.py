@@ -25,6 +25,7 @@ from app.schemas import (
     PredictionResponse,
     ReadinessResponse,
 )
+from app.metrics import setup_metrics
 
 settings = get_settings()
 
@@ -71,6 +72,7 @@ if settings.cors_origins:
         allow_headers=["*"],
     )
 
+setup_metrics(app)
 
 # ===============================
 # Prediction router
@@ -115,6 +117,7 @@ async def root() -> dict[str, str]:
         "health_url": "/health",
         "ready_url": "/ready",
         "predict_url": f"{settings.api_prefix}/predict",
+        "metrics_url": "/metrics", 
     }
 
 

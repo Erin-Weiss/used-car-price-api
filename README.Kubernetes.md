@@ -176,6 +176,9 @@ kubectl get hpa -n used-car-price-api
 # View Pod logs
 kubectl logs -l app.kubernetes.io/name=used-car-price-api \
   -n used-car-price-api -f
+
+# Check metrics
+curl http://<minikube-url>/metrics
 ```
 
 ### Tear Down
@@ -211,4 +214,4 @@ The current manifests target local development. For a production deployment, con
 - **Image tags**: The manifests use `ghcr.io/erin-weiss/used-car-price-api:latest`. For production, pin to a specific commit SHA tag (e.g. `ghcr.io/erin-weiss/used-car-price-api:a1b2c3d`) for reproducible deployments.
 - **Resource limits**: Profile actual memory and CPU usage under load and adjust requests/limits accordingly.
 - **Secrets**: If credentials are added in the future, use Kubernetes Secrets (or an external secrets manager) instead of the ConfigMap.
-- **Monitoring**: Add Prometheus annotations and a `/metrics` endpoint for observability.
+- **Monitoring**: Prometheus annotations are included on the pod spec, and the API exposes a `/metrics` endpoint with prediction count, latency percentiles, and error rates. Connect a Prometheus server to enable dashboards and alerting.

@@ -6,3 +6,4 @@ pandas
 numpy
 catboost
 pillow>=12.2
+prometheus_client

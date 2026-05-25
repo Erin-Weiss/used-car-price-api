@@ -26,7 +26,7 @@ graphviz==0.21
     # via catboost
 h11==0.16.0
     # via uvicorn
-idna==3.11
+idna==3.16
     # via anyio
 kiwisolver==1.5.0
     # via matplotlib
@@ -56,6 +56,8 @@ pillow==12.2.0
     #   matplotlib
 plotly==6.6.0
     # via catboost
+prometheus-client==0.25.0
+    # via -r requirements.in
 pydantic==2.12.5
     # via
     #   -r requirements.in

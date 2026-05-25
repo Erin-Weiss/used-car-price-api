@@ -25,6 +25,10 @@ spec:
         app.kubernetes.io/name: used-car-price-api
         app.kubernetes.io/component: api
         app.kubernetes.io/version: "0.1.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: api
