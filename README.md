@@ -12,6 +12,7 @@
 [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com)
 [![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io)
 [![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?logo=prometheus&logoColor=white)](https://prometheus.io)
+[![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white)](https://grafana.com)
 [![GHCR](https://img.shields.io/badge/GHCR-published-blue?logo=github)](https://github.com/Erin-Weiss/used-car-price-api/pkgs/container/used-car-price-api)
 
 ---
@@ -146,6 +147,14 @@ Metrics are collected via ASGI middleware that wraps the prediction endpoint —
 # View raw metrics
 curl http://localhost:8000/metrics
 ```
+A custom Grafana dashboard visualizes these metrics in real time. The dashboard JSON is included at [`docs/grafana-dashboard.json`](docs/grafana-dashboard.json) for one-click import.
+
+<p align="center">
+  <img src="docs/assets/grafana-dashboard.png" alt="Grafana monitoring dashboard" width="800">
+  <br>
+  <em>Grafana dashboard running on minikube — latency, throughput, and error monitoring across 2 pods</em>
+</p>
+
 ---
 
 ## API Reference
@@ -324,6 +333,12 @@ used-car-price-api/
 │       ├── models_by_manufacturer.json
 │       └── numeric_medians.json
 │
+├── docs/
+│   ├── index.html             # Project page (GitHub Pages)
+│   ├── grafana-dashboard.json # Importable Grafana dashboard
+│   └── assets/
+│       └── grafana-dashboard.png
+│
 ├── Dockerfile
 ├── .dockerignore
 ├── .env.example               # Example environment variables
@@ -413,7 +428,7 @@ That project covers exploratory data analysis, feature engineering across 20 veh
 | CI/CD | `GitHub Actions` |
 | Testing | `pytest` with mocked runtime state |
 | Config | `pydantic-settings` (env vars + `.env`) |
-| Monitoring | `prometheus_client` (Prometheus-compatible metrics) |
+| Monitoring | `prometheus_client` + `Grafana` |
 
 ---
 
