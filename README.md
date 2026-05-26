@@ -15,6 +15,8 @@
 [![Grafana](https://img.shields.io/badge/Grafana-F46800?logo=grafana&logoColor=white)](https://grafana.com)
 [![GHCR](https://img.shields.io/badge/GHCR-published-blue?logo=github)](https://github.com/Erin-Weiss/used-car-price-api/pkgs/container/used-car-price-api)
 
+[View the Full Interactive Report](https://erin-weiss.github.io/articles/API-Used-Car-Price.html) | [Live GitHub Page](https://erin-weiss.github.io/used-car-price-api/)
+
 ---
 
 ## Overview
@@ -442,3 +444,4 @@ This project is for portfolio and educational purposes.
 **Erin Weiss** · [Portfolio](https://erin-weiss.github.io/index.html) · [LinkedIn](https://www.linkedin.com/in/erinweiss3/) · [GitHub](https://github.com/Erin-Weiss)
 
 - **Part 1 (Model Development):** [Used Car Price Prediction](https://github.com/Erin-Weiss/used-car-price-prediction)
+- [Live Notebook](https://erin-weiss.github.io/articles/API-Used-Car-Price.html) — Full rendered analysis with interactive code
