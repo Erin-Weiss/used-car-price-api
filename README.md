@@ -21,7 +21,7 @@
 
 ## Overview
 
-This is **Part 2** of a two-part project. [Part 1](https://github.com/Erin-Weiss/used-car-price-prediction) explored the data science — EDA, feature engineering, and model selection across Ridge, CatBoost, and FT-Transformer architectures. The final CatBoost model predicts within ~$1,300 of the true listing price at the median across 29 manufacturers and 5,600+ model variants.
+This is **Part 2** of a two-part project. [Part 1](https://github.com/Erin-Weiss/used-car-price-prediction) explored the data science: EDA, feature engineering, and model selection across Ridge, CatBoost, and FT-Transformer architectures. The final CatBoost model predicts within ~$1,300 of the true listing price at the median across 29 manufacturers and 5,600+ model variants.
 
 **This repo takes that model from a notebook artifact to a production-ready API**, covering everything a real deployment needs: request validation, fuzzy matching of user inputs, median imputation of optional fields, containerization, orchestration, health monitoring, and automated CI/CD.
 
@@ -76,7 +76,7 @@ flowchart LR
 
 ## Why This Project Exists
 
-Used-car pricing is a high-volume, high-stakes problem. Dealerships, online marketplaces, and auto lenders need fast, accurate price estimates to set competitive listings, flag underpriced inventory, and underwrite loans. A model sitting in a notebook doesn't solve any of those problems — it needs an API that's reliable, observable, and deployable.
+Used-car pricing is a high-volume, high-stakes problem. Dealerships, online marketplaces, and auto lenders need fast, accurate price estimates to set competitive listings, flag underpriced inventory, and underwrite loans. A model sitting in a notebook doesn't solve any of those problems. It needs an API that's reliable, observable, and deployable.
 
 This project demonstrates the full ML engineering lifecycle: taking a trained model and building the production infrastructure around it.
 
@@ -119,7 +119,7 @@ Client Request
 
 ## Key Engineering Decisions
 
-**Shared feature pipeline.** The same `pipeline.py` that transforms training data also runs at inference time. This eliminates training-serving skew — the most common silent failure mode in production ML systems.
+**Shared feature pipeline.** The same `pipeline.py` that transforms training data also runs at inference time. This eliminates training-serving skew, the most common silent failure mode in production ML systems.
 
 **Fuzzy matching for resilient inputs.** Manufacturer, model, drivetrain, and fuel type are matched against the training vocabulary using `difflib.SequenceMatcher`. A user who submits `"Toyata"` gets auto-corrected to `"toyota"` with a warning in the response, rather than a silent bad prediction or a hard rejection. Model names are matched conditionally against the corrected manufacturer's catalog of 5,600+ variants.
 
@@ -129,7 +129,7 @@ Client Request
 
 **Startup vs. readiness vs. liveness probes.** CatBoost model loading takes several seconds. The startup probe gives the container up to ~125s to load before Kubernetes considers it failed, while the readiness probe gates traffic until the model is actually in memory. The liveness probe is a simple process-alive check.
 
-**Thread-safe runtime state.** The model and JSON artifacts are loaded once at startup and shared immutably across all incoming requests. A double-checked lock in `model.py` ensures that even if multiple requests arrive during startup, the model is loaded exactly once — no race conditions, no duplicated work.
+**Thread-safe runtime state.** The model and JSON artifacts are loaded once at startup and shared immutably across all incoming requests. A double-checked lock in `model.py` ensures that even if multiple requests arrive during startup, the model is loaded exactly once, with no race conditions or duplicated work.
 
 ---
 
@@ -143,7 +143,7 @@ The API exposes Prometheus-compatible metrics at `GET /metrics` for production m
 | `prediction_latency_seconds` | Histogram | Prediction duration distribution with percentile buckets |
 | `prediction_errors_total` | Counter | Failed predictions, labeled by error type (validation/server/unexpected) |
 
-Metrics are collected via ASGI middleware that wraps the prediction endpoint — the model inference code itself is untouched. Kubernetes deployment manifests include Prometheus scraping annotations (`prometheus.io/scrape`, `prometheus.io/port`, `prometheus.io/path`) for automatic service discovery in production clusters.
+Metrics are collected via ASGI middleware that wraps the prediction endpoint, so the model inference code itself is untouched. Kubernetes deployment manifests include Prometheus scraping annotations (`prometheus.io/scrape`, `prometheus.io/port`, `prometheus.io/path`) for automatic service discovery in production clusters.
 
 ```bash
 # View raw metrics
@@ -154,7 +154,7 @@ A custom Grafana dashboard visualizes these metrics in real time. The dashboard 
 <p align="center">
   <img src="docs/assets/grafana-dashboard.png" alt="Grafana monitoring dashboard" width="800">
   <br>
-  <em>Grafana dashboard running on minikube — latency, throughput, and error monitoring across 2 pods</em>
+  <em>Grafana dashboard running on minikube: latency, throughput, and error monitoring across 2 pods</em>
 </p>
 
 ---
@@ -173,7 +173,7 @@ These describe the vehicle itself and must always be provided:
 | `mileage` | `float` | Odometer reading in miles (≥ 0) | `35000` |
 | `engine` | `string` | Engine description (parsed for liters, cylinders, layout, turbo) | `"2.5l i4 dohc 16v"` |
 | `transmission` | `string` | Transmission description (parsed for type and gear count) | `"8 speed automatic"` |
-| `drivetrain` | `string` | Drivetrain type (fuzzy-matched); accepts abbreviations or full names — `fwd`, `rwd`, `awd`, `4wd`, `front wheel drive`, `rear wheel drive`, `all wheel drive`, `four wheel drive` | `"fwd"` |
+| `drivetrain` | `string` | Drivetrain type (fuzzy-matched); accepts abbreviations or full names such as `fwd`, `rwd`, `awd`, `4wd`, `front wheel drive`, `rear wheel drive`, `all wheel drive`, `four wheel drive` | `"fwd"` |
 | `fuel_type` | `string` | Fuel type (fuzzy-matched): `gasoline`, `diesel`, `hybrid`, `electric` | `"gasoline"` |
 | `exterior_color` | `string` | Exterior color as listed (mapped to base color internally) | `"silver metallic"` |
 | `interior_color` | `string` | Interior color as listed (mapped to base color internally) | `"black leather"` |
@@ -181,11 +181,11 @@ These describe the vehicle itself and must always be provided:
 | `one_owner` | `int` | `1` if single-owner vehicle, `0` otherwise | `1` |
 | `personal_use_only` | `int` | `1` if personal use only, `0` otherwise | `1` |
 
-> **Note on `year`:** The training data ends in early 2023, so the model's reference year is 2023. Vehicles with a model year after 2023 are treated as brand new (age 0) for the purpose of computing age-derived features like `age` and `mileage_per_year`. This means a 2024 and a 2025 car receive identical age features — not perfect, but far better than feeding a negative age into the model.
+> **Note on `year`:** The training data ends in early 2023, so the model's reference year is 2023. Vehicles with a model year after 2023 are treated as brand new (age 0) for the purpose of computing age-derived features like `age` and `mileage_per_year`. This means a 2024 and a 2025 car receive identical age features, which is not perfect but far better than feeding a negative age into the model.
 
 ### Optional Fields (5)
 
-Listing metadata — omit any or all and training-set medians are substituted:
+Listing metadata. Omit any or all, and training-set medians are substituted:
 
 | Field | Type | Default | Description |
 |---|---|---|---|
@@ -359,7 +359,7 @@ used-car-price-api/
 
 ## Testing
 
-The test suite uses mocked model artifacts so unit tests run in seconds without needing the real CatBoost model file. Integration tests use the real model to verify end-to-end predictions are in reasonable ranges — they run automatically in CI on pushes to main, and can also be run locally.
+The test suite uses mocked model artifacts so unit tests run in seconds without needing the real CatBoost model file. Integration tests use the real model to verify end-to-end predictions are in reasonable ranges. They run automatically in CI on pushes to main, and can also be run locally.
 
 ```bash
 # Unit tests only (fast, no model file needed)

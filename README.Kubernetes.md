@@ -56,7 +56,7 @@ The API exposes two operational endpoints that map directly to Kubernetes probes
 | `GET /health` | Liveness | Process is running and responsive |
 | `GET /ready` | Readiness + Startup | CatBoost model and all JSON artifacts are loaded in memory |
 
-**Why the startup probe hits `/ready` instead of `/health`:** The CatBoost model takes time to load on startup. `/health` returns `200` as soon as the FastAPI process starts — before the model is in memory. `/ready` returns `200` only after `load_runtime_state()` completes. The startup probe allows up to ~125 seconds for this initialization (`5s initial delay + 24 failures × 5s period`), preventing Kubernetes from killing a slow-starting Pod while still catching actual startup crashes.
+**Why the startup probe hits `/ready` instead of `/health`:** The CatBoost model takes time to load on startup. `/health` returns `200` as soon as the FastAPI process starts, before the model is in memory. `/ready` returns `200` only after `load_runtime_state()` completes. The startup probe allows up to ~125 seconds for this initialization (`5s initial delay + 24 failures × 5s period`), preventing Kubernetes from killing a slow-starting Pod while still catching actual startup crashes.
 
 ### Rolling Updates
 
@@ -82,7 +82,7 @@ resources:
     memory: "1Gi"
 ```
 
-The CatBoost model and JSON artifacts live entirely in memory once loaded. Requests are set to accommodate the loaded model at rest; limits provide headroom for inference-time CPU bursts and pandas DataFrame construction during feature engineering. These values are sized for local development with Minikube — production deployments should profile actual usage and adjust upward (512m–1000m CPU requests, 1–2Gi memory requests).
+The CatBoost model and JSON artifacts live entirely in memory once loaded. Requests are set to accommodate the loaded model at rest; limits provide headroom for inference-time CPU bursts and pandas DataFrame construction during feature engineering. These values are sized for local development with Minikube. Production deployments should profile actual usage and adjust upward (512m–1000m CPU requests, 1–2Gi memory requests).
 
 ### Container Security
 
@@ -96,7 +96,7 @@ securityContext:
       - ALL
 ```
 
-The container runs as a non-root user (`appuser`, UID 10001, defined in the Dockerfile), drops all Linux capabilities, and prevents privilege escalation. This limits the blast radius if the container is compromised — the process cannot modify the host filesystem, bind to privileged ports, or escalate to root.
+The container runs as a non-root user (`appuser`, UID 10001, defined in the Dockerfile), drops all Linux capabilities, and prevents privilege escalation. This limits the blast radius if the container is compromised. The process cannot modify the host filesystem, bind to privileged ports, or escalate to root.
 
 ### Auto-Scaling
 
